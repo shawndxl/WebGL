@@ -1,0 +1,9 @@
+{
+	"name": "webGL",
+	"description": "none",
+	"scripts": {
+	    "debug": "fis3 server start --type php -p 8087 && fis3 release -wL"
+	},
+	"license": "MIT",
+	"version": "0.0.1"
+}

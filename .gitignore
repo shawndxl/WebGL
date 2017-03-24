@@ -1,0 +1,38 @@
+# Bower
+coverage
+components
+bower_components
+
+# test
+assets
+
+# release
+release
+output
+_*
+
+# PHP
+/vendor/composer
+/vendor/predis
+/vendor/paipai
+/vendor/overtrue
+/vendor/autoload.php
+/config/app.php
+/tmp/*
+/logs/*
+config/online.config.php
+
+# Yaer
+/public/img
+/public/predis
+/ThinkPHP
+/public/video
+/GatewayWorker
+/GatewayWorker-master
+/Workerman
+/Workerman-todpole-master
+/home
+/index
+/main
+/master
+/name
