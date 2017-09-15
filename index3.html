@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Geometry</title>
+</head>
+<body>
+<canvas width="500" height="500"></canvas>
+</body>
+<script src='node_modules/three/build/three.js'></script>
+
+<script>
+var canvas = document.querySelector('canvas');
+var renderer = new THREE.WebGLRenderer({canvas: canvas, antialias: true});
+renderer.setSize(canvas.width, canvas.height);
+
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera( 45, canvas.width / canvas.height, 1, 3000 );
+
+var geometry = getGeometry(); // 几何形状（顶点的集合）
+var material = getBgMaterial(); // 材质 纹理+颜色
+var mesh = new THREE.Mesh( geometry, material ); // 网格 用三角形
+
+// camera.position.z = 500; 
+mesh.position.z = -500; // 这两句具有相同意义
+
+scene.add( mesh );
+
+scene.add(getLight());
+    
+animate();
+function animate() {
+    requestAnimationFrame( animate ); 
+
+    // mesh.rotation.x += 0.01;
+    mesh.rotation.y += 0.02;
+    renderer.render( scene, camera ); 
+}
+
+function getGeometry() {
+    // 正方形
+    // return new THREE.BoxGeometry(100, 100, 0);
+    // return new THREE.CubeGeometry(2, 2, 2);
+    // BoxGeometry(width, height, dept, widthSegments, heightSegments, depthSegments) 
+
+    // 立方体
+    // return new THREE.BoxGeometry(100, 100, 100);
+    // 圆
+    // return new THREE.CircleGeometry(2, 16);
+    // 球
+    return new THREE.SphereGeometry(100, 100, 100);
+    // SphereGeometry(radius, widthSegments, heightSegments, phiStart, phiLength, thetaStart, thetaLength)
+
+    // 圆锥体
+    return new THREE.CylinderGeometry(0, 33, 84, 20, 5);
+    // 多边形
+    // THREE.ShapeGeometry(shapes, options)    
+}
+
+function getLight() {
+    // 定向光源
+    var directionalLight = new THREE.DirectionalLight( 0xffffff, 1.5);
+    directionalLight.position.set(.5, 0, 3);
+    return directionalLight;
+
+    // 点光源
+    var pointLight = new THREE.PointLight(0x0000ff, 1, 20);
+    pointLight.position.set(-5, 2, -10);
+    return pointLight;
+
+    // 
+    var spotLight = new THREE.SpotLight(0x00ff00);
+    spotLight.position.set(2, 2, 5);
+    spotLight.target.position.set(2, 0, 4);
+    return spotLight;
+    
+    var ambientLight = new THREE.AmbientLight( 0x888888 );
+    return ambientLight;
+}
+
+function getBgMaterial() {
+    return new THREE.MeshBasicMaterial({
+          map: getMap('img/moon.jpg'),
+          color: '#fff',
+          side: THREE.BackSide
+    });
+}
+
+function getMaterial() {
+    // 普通材质 自发光材质 不需要光
+    // return new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } );
+
+    // return new THREE.MeshNormalMaterial();
+    // lambert材质
+    // 反光材质
+    // 带图片纹理
+    
+    // Now, create a Phong material to show shading; pass in the map
+    return new THREE.MeshPhongMaterial({ 
+        map: getMap("img/box.png"),
+        color: 0xffffff 
+    });
+
+    var phong =  new THREE.MeshPhongMaterial({ bumpMap: getMap("img/cloud2.png") });
+    var phongTextured = new THREE.MeshPhongMaterial({
+        map: get("img/moon.jpg"), 
+        bumpMap: getMap("img/cloud2.png") 
+    });
+
+    return phong;
+
+    function setMaterialColor(material, r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        material.color.setRGB(r, g, b);
+        material.color.setRGB(r, g, b);
+    }
+}
+
+function getM() {
+//     ID：标识材质
+// name： 名称
+// opacity：透明度，结合transparent使用，范围为0~1
+// transparent：是否透明，如果为true则结合opacity设置透明度。如果为false则物体不透明
+// visible：是否可见，false则看不见，默认可以看见
+// side：侧面，觉得几何体的哪一面应用这个材质，默认为THREE.FrontSide(前外面)，还有THREE.BackSide(后内面)和THREE.DoubleSide(两面)
+// needUpdate：如果为true，则在几何体使用新的材质的时候更新材质缓存
+return THREE.Material({
+
+})
+}
+
+function getBasicM() {
+    return new THREE.MeshBasicMaterial({
+        // color：设置材质的颜色
+        // wireframe：如果为true，则将材质渲染成线框，在调试的时候可以起到很好的作用
+        // wireframeLinewidth：wireframe为true时，设置线框中线的宽度
+        // wireframeLinecap：决定线框端点如何显示，可选的值 round，bevel(斜角)和miter(尖角)。
+        // vertexColors：通过这属性，定义顶点的颜色，在canvasRender中不起作用。
+        // fog：决定单个材质的是否受全局雾化的影响。 
+        // 值得一提的是： 
+        // 对于fog属性，在全局中如果设定了雾化属性，那么本应该对所有场景的物体都添加雾化效果。    
+    })
+}
+
+// MeshPhongMaterial金属发亮的物体,该材质对光源有反应
+// Phong光照模型 https://baike.baidu.com/item/Phong%E5%85%89%E7%85%A7%E6%A8%A1%E5%9E%8B/16858963?fr=aladdin
+function getPhongM() {
+    return new THREE.MeshPhongMaterial({
+        color: 0x7777ff,
+        specular:0x7777ff,
+        shininess:30
+    });
+    return new THREE.MeshBasicMaterial({
+        // color：设置材质的颜色
+        bumpMap: '', // 凹凸贴图 创造如地球表面的效果
+        map: '', // 贴图
+
+        // wireframe：如果为true，则将材质渲染成线框，在调试的时候可以起到很好的作用
+        // wireframeLinewidth：wireframe为true时，设置线框中线的宽度
+        // wireframeLinecap：决定线框端点如何显示，可选的值 round，bevel(斜角)和miter(尖角)。
+        // vertexColors：通过这属性，定义顶点的颜色，在canvasRender中不起作用。
+        // fog：决定单个材质的是否受全局雾化的影响。 
+        // 值得一提的是： 
+        // 对于fog属性，在全局中如果设定了雾化属性，那么本应该对所有场景的物体都添加雾化效果。 
+        //         ambient：设置材质的环境色，和AmbientLight光源一起使用，这个颜色会与环境光的颜色相乘。即是对光源作出反应。
+        // emissive：设置材质发射的颜色，不是一种光源，而是一种不受光照影响的颜色。默认为黑色
+        // specular：指定该材质的光亮程度及其高光部分的颜色，如果设置成和color属性相同的颜色，则会得到另一个更加类似金属的材质，如果设置成grey灰色，则看起来像塑料
+        // shininess：指定高光部分的亮度，默认值为30.   
+    })
+}
+
+// 暗淡不发光 该材质对光源有反应
+function getLemberM() {
+    return new THREE.MeshLambertMaterial({
+        color: "",
+        transparent: "",
+        opacity: "",
+        fog: "",
+        ambient: "", //设置材质的环境色，和AmbientLight光源一起使用，这个颜色会与环境光的颜色相乘。即是对光源作出反应。
+        emissive: "", //设置材质发射的颜色，不是一种光源，而是一种不受光照影响的颜色。默认为黑色
+    });
+}
+
+function getMap(src) {
+    return new THREE.ImageUtils.loadTexture(src);
+}
+</script>
+</html>

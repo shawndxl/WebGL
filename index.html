@@ -1,188 +1,152 @@
-<!DOCTYPE html>
 <html>
+
 <head>
-	<title></title>
-	<style type="text/css">
-		* {
-			margin: 0;
-			padding: 0;
-		}
-		body {
-		   background: #a7cfdf; /* Old browsers */
-		   background: -webkit-linear-gradient(bottom left, #a7cfdf 0%, #23538a 100%);
-		   background: -moz-linear-gradient(bottom left, #a7cfdf 0%, #23538a 100%);
-		   background: -o-linear-gradient(bottom left, #a7cfdf 0%, #23538a 100%);
-		   background: linear-gradient(to top right, #a7cfdf 0%, #23538a 100%);
-		}
-	</style>
+<title>First WebGL app</title>
+<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
 </head>
-
 <body>
-<div id="cloudcanvas"></div>
+    <canvas width="500" height="500"></canvas>
 </body>
+<script src="node_modules/gl-matrix/dist/gl-matrix.js"></script>
 
-<script src="js/cloud/ThreeWebGL.js"></script>
-<script src="js/cloud/ThreeExtras.js"></script>
-<script src="js/cloud/lanrenzhijia.js"></script>
-<script src="js/cloud/RequestAnimationFrame.js"></script>
-
-<script id="vs" type="x-shader/x-vertex">
-varying vec2 vUv;
-void main() {
-
-	vUv = uv;
-	gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
-
+<script id='fragShader' type='x-shader/x-fragment'>
+void main(void) {
+    // Return the pixel color: always output white 
+    gl_FragColor = vec4(1.0, 1.0, 0, 1.0); 
 }
 </script>
 
-<script id="fs" type="x-shader/x-fragment">
+<script>
+    var canvas = document.querySelector("canvas");
+    // 初始化webgl对象
+    var gl = canvas.getContext("webgl");
+    // 设置视口
+    gl.viewport(0, 0, canvas.width, canvas.height);
 
-uniform sampler2D map;
+    var square = createSquare(gl);
 
-uniform vec3 fogColor;
-uniform float fogNear;
-uniform float fogFar;
+    // ---- ---
+    var projectionMatrix, modelViewMatrix;
+    // 这个着色器 执行的是像素位置的渲染 ， 三维坐标 * 包含位移信息的modelview4*4矩阵 * 从3D->2D的 4*4矩阵
+    var vertexShaderSource =
+        
+        "    attribute vec3 vertexPos;\n" +
+        "    uniform mat4 modelViewMatrix;\n" +
+        "    uniform mat4 projectionMatrix;\n" +
+        "    void main(void) {\n" +
+        "       // Return the transformed and projected vertex value\n" +
+        "        gl_Position = projectionMatrix * modelViewMatrix * \n" +
+        "            vec4(vertexPos, 1.0);\n" +
+        "    }\n";
 
-varying vec2 vUv;
+    var fragmentShaderSource = document.getElementById('fragShader').textContent;
 
-void main() {
+    var shaderProgram, shaderVertexPositionAttribute, shaderProjectionMatrixUniform, shaderModelViewMatrixUniform;
 
-	float depth = gl_FragCoord.z / gl_FragCoord.w;
-	float fogFactor = smoothstep( fogNear, fogFar, depth );
+    
+    initMatrices(canvas);
+    initShader(gl);
+    draw(gl, square);
 
-	gl_FragColor = texture2D( map, vUv );
-	gl_FragColor.w *= pow( gl_FragCoord.z, 20.0 );
-	gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
+    function initMatrices(canvas) {
+        // Create a model view matrix with object at 0, 0, -3.333
+        modelViewMatrix = mat4.create();
+        mat4.translate(modelViewMatrix, modelViewMatrix, [0, 0, -3.333]);
 
-}
+        // Create a project matrix with 45 degree field of view
+        projectionMatrix = mat4.create();
+        mat4.perspective(projectionMatrix, Math.PI / 4, canvas.width / canvas.height, 1, 10000);
+    }
 
-</script>
+    function initShader(gl) {
 
-<script type="text/javascript">
+        // load and compile the fragment and vertex shader
+        //var fragmentShader = getShader(gl, "fragmentShader");
+        //var vertexShader = getShader(gl, "vertexShader");
+        var fragmentShader = createShader(gl, fragmentShaderSource, "fragment");
+        var vertexShader = createShader(gl, vertexShaderSource, "vertex");
 
-if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+        // link them together into a new program
+        shaderProgram = gl.createProgram();
+        gl.attachShader(shaderProgram, vertexShader);
+        gl.attachShader(shaderProgram, fragmentShader);
+        gl.linkProgram(shaderProgram);
 
-// Bg gradient
-var canvas = document.createElement('canvas');
-canvas.width = 32;
-canvas.height = window.innerHeight;
+        // get pointers to the shader params
+        shaderVertexPositionAttribute = gl.getAttribLocation(shaderProgram, "vertexPos");
+        gl.enableVertexAttribArray(shaderVertexPositionAttribute);
+        
+        shaderProjectionMatrixUniform = gl.getUniformLocation(shaderProgram, "projectionMatrix");
+        shaderModelViewMatrixUniform = gl.getUniformLocation(shaderProgram, "modelViewMatrix");
 
-var context = canvas.getContext( '2d' );
+        
+        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+            alert("Could not initialise shaders");
+        }
+    }
 
-var gradient = context.createLinearGradient( 0, 0, 0, canvas.height );
-gradient.addColorStop(0, "#1e4877");
-gradient.addColorStop(0.5, "#4584b4");
+    // Create the vertex data for a square to be drawn
+    function createSquare(gl) {
+        var vertexBuffer;
+        vertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+        var verts = [
+             .5,  .5,  0.0,
+            -.5,  .5,  0.0,
+             .5, -.5,  0.0,
+            -.5, -.5,  0.0
+        ];
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(verts), gl.STATIC_DRAW);
+        var square = {
+            buffer:vertexBuffer,
+            vertSize:3,
+            nVerts:4,
+            primtype:gl.TRIANGLE_STRIP
+        };
+        return square;
+    }
 
-context.fillStyle = gradient;
-context.fillRect(0, 0, canvas.width, canvas.height);
+    function createShader(gl, str, type) {
+        var shader;
+        if (type == "fragment") {
+            shader = gl.createShader(gl.FRAGMENT_SHADER);
+        } else if (type == "vertex") {
+            shader = gl.createShader(gl.VERTEX_SHADER);
+        } else {
+            return null;
+        }
 
-// Clouds
-var container;
-var camera, scene, renderer, sky, mesh, geometry, material,
-i, h, color, colors = [], sprite, size, x, y, z;
+        gl.shaderSource(shader, str);
+        gl.compileShader(shader);
 
-var mouseX = 0, mouseY = 0;
-var start_time = new Date().getTime();
+        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader));
+            return null;
+        }
 
-var windowHalfX = window.innerWidth / 2;
-var windowHalfY = window.innerHeight / 2;
+        return shader;
+    }
 
-init();
-animate();
+    function draw(gl, obj) {
 
-function init() {
-	container = document.getElementById('cloudcanvas');
-	document.body.appendChild( container );
+       // clear the background (with black)
+       gl.clearColor(0.0, 0.0, 0.0, 1.0);
+       gl.clear(gl.COLOR_BUFFER_BIT);
 
-	camera = new THREE.Camera( 30, window.innerWidth / window.innerHeight, 1, 3000 );
-	camera.position.z = 6000;
+       // set the shader to use
+       gl.useProgram(shaderProgram);
 
-	scene = new THREE.Scene();
+       // connect up the shader parameters: vertex position and projection/model matrices
+       // set the vertex buffer to be drawn
+       gl.bindBuffer(gl.ARRAY_BUFFER, obj.buffer);
+       gl.vertexAttribPointer(shaderVertexPositionAttribute, obj.vertSize, gl.FLOAT, false, 0, 0);
+       gl.uniformMatrix4fv(shaderProjectionMatrixUniform, false, projectionMatrix);
+       gl.uniformMatrix4fv(shaderModelViewMatrixUniform, false, modelViewMatrix);
 
-	geometry = new THREE.Geometry();
-
-	var texture = THREE.ImageUtils.loadTexture( 'img/cloud.png' );
-	texture.magFilter = THREE.LinearMipMapLinearFilter;
-	texture.minFilter = THREE.LinearMipMapLinearFilter;
-
-	var fog = new THREE.Fog( 0x4584b4, - 100, 3000 );
-
-	material = new THREE.MeshShaderMaterial( {
-
-		uniforms: {
-
-			"map": { type: "t", value:2, texture: texture },
-			"fogColor" : { type: "c", value: fog.color },
-			"fogNear" : { type: "f", value: fog.near },
-			"fogFar" : { type: "f", value: fog.far },
-
-		},
-		vertexShader: document.getElementById( 'vs' ).textContent,
-		fragmentShader: document.getElementById( 'fs' ).textContent,
-		depthTest: false
-
-	} );
-
-	var plane = new THREE.Mesh( new THREE.Plane( 64, 64 ) );
-
-	for ( i = 0; i < 8000; i++ ) {
-
-		plane.position.x = Math.random() * 1000 - 500;
-		plane.position.y = - Math.random() * Math.random() * 200 - 15;
-		plane.position.z = i;
-		plane.rotation.z = Math.random() * Math.PI;
-		plane.scale.x = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
-
-		GeometryUtils.merge( geometry, plane );
-
-	}
-
-	mesh = new THREE.Mesh( geometry, material );
-	scene.addObject( mesh );
-
-	mesh = new THREE.Mesh( geometry, material );
-	mesh.position.z = - 8000;
-	scene.addObject( mesh );
-
-	renderer = new THREE.WebGLRenderer( { antialias: false } );
-	renderer.setSize( window.innerWidth, window.innerHeight );
-	container.appendChild( renderer.domElement );
-
-	document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-	window.addEventListener( 'resize', onWindowResize, false );
-}
-
-function onDocumentMouseMove( event ) {
-	mouseX = ( event.clientX - windowHalfX ) * 0.25;
-	mouseY = ( event.clientY - windowHalfY ) * 0.15;
-}
-
-function onWindowResize( event ) {
-	camera.aspect = window.innerWidth / window.innerHeight;
-	camera.updateProjectionMatrix();
-
-	renderer.setSize( window.innerWidth, window.innerHeight );
-}
-
-function animate() {
-	requestAnimationFrame( animate );
-	render();
-}
-
-function render() {
-	position = ( ( new Date().getTime() - start_time ) * 0.03 ) % 8000;
-
-	camera.position.x += ( mouseX - camera.target.position.x ) * 0.01;
-	camera.position.y += ( - mouseY - camera.target.position.y ) * 0.01;
-	camera.position.z = - position + 8000;
-
-	camera.target.position.x = camera.position.x;
-	camera.target.position.y = camera.position.y;
-	camera.target.position.z = camera.position.z - 1000;
-
-	renderer.render( scene, camera );
-}
+       // draw the object
+       gl.drawArrays(obj.primtype, 0, obj.nVerts);
+    }
 
 </script>
 </html>
+

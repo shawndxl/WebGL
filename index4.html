@@ -1,0 +1,126 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>demo.html精简版</title>
+</head>
+<body>
+
+</body>
+<script>
+	// polyfill当中已经设置了默认值
+	window.WebVRConfig = {
+		BUFFER_SCALE: 0.5,
+		ROTATE_INSTRUCTIONS_DISABLED: true
+	}  
+
+</script>
+
+<!-- <script src="node_modules/es6-promise/dist/es6-promise.js"></script> -->
+
+<script src='node_modules/three/three.min.js'></script>
+<script src="node_modules/three/examples/js/controls/VRControls.js"></script>
+<script src="node_modules/three/examples/js/effects/VREffect.js"></script>
+
+<script src="node_modules/webvr-polyfill/build/webvr-polyfill.js"></script>
+
+<script>
+
+// https://developer.mozilla.org/en-US/docs/Web/API/Navigator/getVRDisplays
+// http://caniuse.com/#search=getVRDisplays
+/**
+ * 通过vr effect 可以很方便的把threejs创建的图形转变成左右眼的vr图形
+ * 通过vr controls 可以调用vr设备或者手机的位置api并且应用到camera上
+ * 这两者都是threejs的插件，但他依据的某些接口，比如navigator.getDevice并不是都有的，这也就是为什么再饮用webgl-polyfill，打补丁。
+ * manager只是封装了一些事件，使之可以开关控制是否展示vr，在不支持的时候也有比较好的展示，不会报错
+ */
+var renderer = new THREE.WebGLRenderer({antialias: true});
+renderer.setPixelRatio(window.devicePixelRatio);
+
+document.body.appendChild(renderer.domElement);
+
+var scene = new THREE.Scene();
+
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+var controls = new THREE.VRControls(camera);
+controls.standing = true;
+
+// Apply VR stereo rendering to renderer.
+var effect = new THREE.VREffect(renderer);
+effect.setSize(window.innerWidth, window.innerHeight);
+
+
+//__________________________________
+// Add a repeating grid as a skybox.
+
+var boxSize = 5;
+var loader = new THREE.TextureLoader();
+loader.load('img/box.png', onTextureLoaded);
+
+function onTextureLoaded(texture) {
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(boxSize, boxSize);
+
+  var geometry = new THREE.BoxGeometry(boxSize, boxSize, boxSize);
+  var material = new THREE.MeshBasicMaterial({
+    map: texture,
+    color: 0x00ff00,
+    side: THREE.BackSide
+  });
+
+  // Align the skybox to the floor (which is at y=0).
+  skybox = new THREE.Mesh(geometry, material);
+  skybox.position.y = boxSize/2;
+  scene.add(skybox);
+
+  // For high end VR devices like Vive and Oculus, take into account the stage
+  // parameters provided.
+  //在高端的设备上，要考虑到设备提供的场景信息的更新。
+  // setupStage();
+}
+
+
+// cube
+//__________________________________
+
+
+// Create 3D objects.
+var geometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+
+var material = new THREE.MeshNormalMaterial();
+var cube = new THREE.Mesh(geometry, material);
+
+
+// Position cube mesh to be right in front of you.
+cube.position.set(0, controls.userHeight, -1);
+cube.rotation.x = Math.PI / 180 * 45;
+// Add cube mesh to your three.js scene
+scene.add(cube);
+
+// Kick off animation loop
+requestAnimationFrame(animate);
+
+
+// Request animation frame loop function
+var lastRender = 0;
+function animate() {
+  var now = Date.now();
+  var delta = Math.min(now - lastRender, 500);
+  lastRender = now;
+
+  cube.rotation.y += delta * 0.0006;
+
+  controls.update();
+
+  effect.render(scene, camera);
+  effect.setFullScreen(true);
+
+  requestAnimationFrame(animate);
+}
+
+	
+</script>
+
+
+</html>

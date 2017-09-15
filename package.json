@@ -1,9 +1,16 @@
 {
-	"name": "webGL",
-	"description": "none",
-	"scripts": {
-	    "debug": "fis3 server start --type php -p 8087 && fis3 release -wL"
-	},
-	"license": "MIT",
-	"version": "0.0.1"
+  "name": "webGL",
+  "description": "none",
+  "scripts": {
+    "debug": "fis3 server start --type php -p 8087 && fis3 release -wL"
+  },
+  "license": "MIT",
+  "version": "0.0.1",
+  "dependencies": {
+    "es6-promise": "^4.1.1",
+    "gl-matrix": "^2.4.0",
+    "three": "^0.87.1",
+    "webvr-boilerplate": "git+https://github.com/SoAanyip/WebVR-Boilerplate-CN.git",
+    "webvr-polyfill": "^0.9.38"
+  }
 }
