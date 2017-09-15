@@ -1,7 +1,8 @@
-# Bower
+# node_modules Bower
 coverage
 components
 bower_components
+node_modules
 
 # test
 assets
@@ -21,18 +22,3 @@ _*
 /tmp/*
 /logs/*
 config/online.config.php
-
-# Yaer
-/public/img
-/public/predis
-/ThinkPHP
-/public/video
-/GatewayWorker
-/GatewayWorker-master
-/Workerman
-/Workerman-todpole-master
-/home
-/index
-/main
-/master
-/name
